@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fsnotify/fsnotify"
-	"path/filepath"
 	"log"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -16,11 +17,29 @@ type result struct {
 	err      error
 }
 
+const defaultTimeout=30
+
 func main() {
+
+	if len(os.Args) < 2 {
+		panic(fmt.Errorf("must provide the folder to watch and the file to listen to"))
+	}
+
+	var err error
+
 	folderPath:=os.Args[1]
 	wantedFileName:=os.Args[2]
 
+	timeout := defaultTimeout
 
+
+	if len(os.Args) > 3 {
+		timeoutArg:=os.Args[3]
+		timeout, err=strconv.Atoi(timeoutArg)
+		if err != nil {
+			panic(fmt.Errorf("timeout argument must be an integer: %v", err))
+		}
+	}
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -77,8 +96,8 @@ func main() {
 		}
 
 
-	case <-time.After(30 * time.Second):
-		fmt.Printf("timeout for %d second", 30)
+	case <-time.After(time.Duration(timeout) * time.Second):
+		fmt.Printf("timeout for %d second", timeout)
 	}
 
 	return
